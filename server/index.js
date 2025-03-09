@@ -8,13 +8,22 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-safety')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://root:root@cluster0.o6nr6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => {
+    console.log('Connected to MongoDB');
+    createDummyUser(); // Create dummy user only after successful connection
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -25,7 +34,7 @@ const userSchema = new mongoose.Schema({
   lastLogin: Date
 });
 
-const User = mongoose.model('User', mongoose.model);
+const User = mongoose.model('User', userSchema);
 
 // Create dummy user
 async function createDummyUser() {
@@ -44,8 +53,6 @@ async function createDummyUser() {
     console.error('Error creating dummy user:', error);
   }
 }
-
-createDummyUser();
 
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
