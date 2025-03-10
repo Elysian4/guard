@@ -1,90 +1,171 @@
-import React from 'react';
-import { Smartphone, Wifi, Plus, Trash2 } from 'lucide-react';
+import React, { useState } from "react"; 
 
-const DevicePairing = () => {
-  return (
-    <div className="min-h-screen pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Device Pairing</h1>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              <Plus className="w-4 h-4" />
-              <span>Add New Device</span>
-            </button>
-          </div>
+import { Smartphone, Wifi, Plus, Trash2, X } from "lucide-react"; 
 
-          <div className="space-y-6">
-            {/* Active Device */}
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Primary Phone</h3>
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <Wifi className="w-4 h-4" />
-                      <span>Connected</span>
-                    </div>
-                  </div>
-                </div>
-                <button className="text-red-600 hover:text-red-700">
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+import { Dialog } from "@headlessui/react"; 
 
-            {/* Inactive Device */}
-            <div className="border rounded-lg p-4 opacity-60">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">Backup Device</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Wifi className="w-4 h-4" />
-                      <span>Disconnected</span>
-                    </div>
-                  </div>
-                </div>
-                <button className="text-gray-600 hover:text-gray-700">
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+ 
 
-            <div className="mt-8">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Pairing Instructions</h2>
-              <ol className="space-y-3 text-gray-600">
-                <li className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                    1
-                  </div>
-                  <span>Download the AI Safety app on your device</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                    2
-                  </div>
-                  <span>Open the app and go to Settings → Pair Device</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                    3
-                  </div>
-                  <span>Scan the QR code or enter the pairing code manually</span>
-                </li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+const DevicePairing = () => { 
 
-export default DevicePairing;
+  const [isModalOpen, setIsModalOpen] = useState(false); 
+
+  const pairingCode = "1234-5678"; // Example pairing code 
+
+ 
+
+  return ( 
+
+    <div className="min-h-screen pt-16"> 
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"> 
+
+        <div className="bg-white rounded-lg shadow-lg p-6"> 
+
+          <div className="flex items-center justify-between mb-6"> 
+
+            <h1 className="text-2xl font-bold text-gray-900">Device Pairing</h1> 
+
+            <button 
+
+              onClick={() => setIsModalOpen(true)} 
+
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" 
+
+            > 
+
+              <Plus className="w-4 h-4" /> 
+
+              <span>Add New Device</span> 
+
+            </button> 
+
+          </div> 
+
+ 
+
+          <div className="space-y-6"> 
+
+            {/* Active Device */} 
+
+            <div className="border rounded-lg p-4"> 
+
+              <div className="flex items-center justify-between"> 
+
+                <div className="flex items-center gap-3"> 
+
+                  <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center"> 
+
+                    <Smartphone className="w-6 h-6 text-green-600" /> 
+
+                  </div> 
+
+                  <div> 
+
+                    <h3 className="font-medium text-gray-900">Primary Phone</h3> 
+
+                    <div className="flex items-center gap-2 text-sm text-green-600"> 
+
+                      <Wifi className="w-4 h-4" /> 
+
+                      <span>Connected</span> 
+
+                    </div> 
+
+                  </div> 
+
+                </div> 
+
+                <button className="text-red-600 hover:text-red-700"> 
+
+                  <Trash2 className="w-5 h-5" /> 
+
+                </button> 
+
+              </div> 
+
+            </div> 
+
+          </div> 
+
+        </div> 
+
+      </div> 
+
+ 
+
+      {/* Modal for QR Code and Pairing Code */} 
+
+      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"> 
+
+        <Dialog.Panel className="bg-white p-6 rounded-lg shadow-lg w-96"> 
+
+          <div className="flex justify-between items-center mb-4"> 
+
+            <h2 className="text-lg font-semibold">Pair a New Device</h2> 
+
+            <button onClick={() => setIsModalOpen(false)} className="text-gray-600 hover:text-gray-800"> 
+
+              <X className="w-5 h-5" /> 
+
+            </button> 
+
+          </div> 
+
+           
+
+          <div className="flex flex-col items-center"> 
+
+            <div className="border p-4 rounded-lg mb-2"> 
+
+              <img src="/qr-placeholder.png" alt="QR Code" className="w-32 h-32" /> 
+
+            </div> 
+
+            <p className="text-gray-700 font-medium text-lg mb-4">Code: <span className="font-bold">{pairingCode}</span></p> 
+
+             
+
+            <p>Or</p> 
+
+             
+
+ 
+
+            <input 
+
+              type="text" 
+
+              placeholder="Enter pairing code" 
+
+              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+
+            /> 
+
+             
+
+            <button className="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"> 
+
+              Pair Device 
+
+            </button> 
+
+          </div> 
+
+        </Dialog.Panel> 
+
+      </Dialog> 
+
+    </div> 
+
+  ); 
+
+}; 
+
+ 
+
+export default DevicePairing; 
+
+ 
+
+ 
