@@ -1,13 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css"; // Leaflet CSS for map styling
 import useLocalStorage from "../hooks/useLocalStorage";
 import useGeolocation from "../hooks/useGeolocation";
+import { Shield } from "lucide-react";
 
 export default function Map() {
   const mapRef = useRef<HTMLDivElement>(null); // Ref for the map container
   const mapInstance = useRef<L.Map | null>(null); // Ref for Leaflet map instance
   const userMarkerRef = useRef<L.Marker | null>(null); // Ref for the user marker
+  const [safetyActive, setSafetyActive] = useState<boolean>(localStorage.getItem('SAFETY_ACTIVE') === 'true');
+  const [safetyCode, setSafetyCode] = useState<string>(localStorage.getItem('SAFETY_CODE') || '');
+  const [endingLocation, setEndingLocation] = useState<string>(localStorage.getItem('ENDING_LOCATION') || '');
 
   // Store user position with default India coordinates
   const [userPosition, setUserPosition] = useLocalStorage<{ latitude: number; longitude: number }>(
@@ -24,6 +28,22 @@ export default function Map() {
   // Get user location or fallback to India
   const location = useGeolocation();
   const currentPosition = location || userPosition; // Use geolocation if available, otherwise use last stored position
+
+  // Function to deactivate safety mode
+  const deactivateSafety = () => {
+    const enteredCode = prompt("Please enter your safety code to deactivate:");
+    if (enteredCode === safetyCode) {
+      localStorage.removeItem('SAFETY_ACTIVE');
+      localStorage.removeItem('SAFETY_CODE');
+      localStorage.removeItem('ENDING_LOCATION');
+      setSafetyActive(false);
+      setSafetyCode('');
+      setEndingLocation('');
+      alert("Safety mode deactivated successfully.");
+    } else {
+      alert("Incorrect safety code. Safety mode remains active.");
+    }
+  };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -93,5 +113,25 @@ export default function Map() {
     };
   }, [currentPosition.latitude, currentPosition.longitude, nearbyMarkers]); // Updates when location changes
 
-  return <div ref={mapRef} className="map-container" />;
+  return (
+    <div className="relative">
+      <div ref={mapRef} className="map-container" />
+      
+      {safetyActive && (
+        <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-md z-10">
+          <div className="flex items-center mb-2">
+            <Shield className="w-5 h-5 text-green-600 mr-2" />
+            <h3 className="font-bold text-green-600">Safety Mode Active</h3>
+          </div>
+          <p className="text-sm mb-1"><strong>Destination:</strong> {endingLocation}</p>
+          <button 
+            onClick={deactivateSafety}
+            className="mt-2 w-full bg-red-500 hover:bg-red-600 text-white text-sm py-1 px-2 rounded"
+          >
+            Deactivate Safety
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }

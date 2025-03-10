@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Shield, MapPin, Bell, Smartphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SafetyActivationModal from '../components/SafetyActivationModal';
 
 const Dashboard = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -17,12 +23,12 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
           <h1 className="text-5xl font-bold mb-4">AI-Driven Safety</h1>
           <p className="text-xl mb-8">Real-time tracking, emergency alerts, and proactive safety</p>
-          <Link
-            to="/live-map"
+          <button
+            onClick={openModal}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors"
           >
             Activate Safety
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -81,6 +87,9 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
+
+      {/* Safety Activation Modal */}
+      <SafetyActivationModal isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };
