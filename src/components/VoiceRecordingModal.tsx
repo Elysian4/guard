@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, X, Check } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { uploadVoiceRecordings } from '../lib/auth';
+import axios from 'axios';
 
 interface VoiceRecordingModalProps {
   userId: string;
@@ -23,8 +24,16 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ userId, onCom
   const startRecording = async () => {
     try {
       setError('');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000
+        } 
+      });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
+      });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -32,18 +41,34 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ userId, onCom
         audioChunksRef.current.push(event.data);
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        setRecordings(prev => [...prev, audioBlob]);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Convert to WAV format
+        const wavBlob = await convertToWav(audioBlob);
+        setRecordings(prev => [...prev, wavBlob]);
         setRecordingNumber(prev => prev + 1);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+
+      // Stop recording after 5 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          stopRecording();
+        }
+      }, 5000);
     } catch (err) {
       setError('Microphone access denied. Please allow microphone access to continue.');
       console.error('Error accessing microphone:', err);
     }
+  };
+
+  // Function to convert audio blob to WAV format
+  const convertToWav = async (blob: Blob): Promise<Blob> => {
+    // For now, we'll just return the blob as is
+    // In a production environment, you would want to properly convert to WAV format
+    return blob;
   };
 
   const stopRecording = () => {
@@ -73,18 +98,37 @@ const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({ userId, onCom
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      recordings.forEach((blob, index) => {
-        formData.append('recordings', blob, `recording-${index + 1}.wav`);
-      });
-      formData.append('userId', userId);
-      formData.append('username', user.name);
+      // Convert recordings to base64
+      const recordingsBase64 = await Promise.all(
+        recordings.map(async (blob) => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64String = (reader.result as string).split(',')[1];
+              resolve(base64String);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        })
+      );
 
-      await uploadVoiceRecordings(formData, token);
+      console.log('Uploading recordings...');
+      await uploadVoiceRecordings({
+        recordings: recordingsBase64,
+        userId: userId,
+        username: user.name
+      }, token);
+      
+      console.log('Upload completed successfully');
       onComplete();
-    } catch (err) {
-      setError('Failed to upload voice recordings. Please try again.');
+    } catch (err: unknown) {
       console.error('Error uploading recordings:', err);
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to upload voice recordings. Please try again.');
+      }
     } finally {
       setUploading(false);
     }

@@ -224,71 +224,136 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Voice Recording Route
-app.post('/api/user/voice-recordings', authenticateToken, upload.array('recordings', 10), async (req, res) => {
+app.post('/api/user/voice-recordings', authenticateToken, express.json({limit: '50mb'}), async (req, res) => {
   try {
     console.log('Voice recordings request received');
     console.log('User ID from token:', req.user.userId);
-    console.log('Files received:', req.files ? req.files.length : 0);
     
-    const userId = req.user.userId;
-    const files = req.files;
-    
-    if (!files || files.length < 10) {
+    const recordings = req.body.recordings;
+    if (!recordings || !Array.isArray(recordings) || recordings.length < 10) {
       console.log('Error: Not enough recordings received');
-      return res.status(400).json({ message: 'Please upload all 10 voice recordings' });
+      return res.status(400).json({ message: 'Please provide all 10 voice recordings' });
     }
 
     // Get the user's name for the directory
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Get file paths
-    const filePaths = files.map(file => file.path);
-    console.log('File paths:', filePaths);
-    
-    // Save to database
-    const voiceRecording = await VoiceRecording.create({
-      userId,
-      recordings: filePaths
-    });
-    console.log('Voice recordings saved to database:', voiceRecording._id);
-
-    // Trigger the speaker recognition model training
+    // Process recordings directly using Python script
     try {
       const { spawn } = require('child_process');
       const pythonProcess = spawn('python', [
-        path.join(__dirname, '..', 'Backend_trackApp', 'train_model.py'),
-        user.name // Pass the username as an argument
+        path.join(__dirname, '..', 'Backend_trackApp', 'process_voice.py')
       ]);
 
+      // Send recordings data to Python script
+      pythonProcess.stdin.write(JSON.stringify({ recordings }));
+      pythonProcess.stdin.end();
+
+      let result = '';
+      let error = '';
+
       pythonProcess.stdout.on('data', (data) => {
-        console.log('Model training output:', data.toString());
+        result += data.toString();
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        console.error('Model training error:', data.toString());
+        error += data.toString();
+        console.error('Python process error:', data.toString());
       });
 
-      pythonProcess.on('close', (code) => {
-        console.log('Model training finished with code:', code);
+      await new Promise((resolve, reject) => {
+        pythonProcess.on('close', (code) => {
+          if (code === 0) {
+            try {
+              const processResult = JSON.parse(result);
+              if (processResult.success) {
+                resolve();
+              } else {
+                reject(new Error(processResult.error || 'Voice processing failed'));
+              }
+            } catch (e) {
+              reject(new Error('Failed to parse Python script output'));
+            }
+          } else {
+            reject(new Error(`Python process exited with code ${code}: ${error}`));
+          }
+        });
       });
     } catch (error) {
-      console.error('Error running model training:', error);
-      // Don't throw error here, as recordings are already saved
+      console.error('Error processing voice recordings:', error);
+      return res.status(500).json({ message: 'Voice processing failed' });
     }
     
     // Update user to mark voice as recorded and no longer first login
-    const updatedUser = await User.findByIdAndUpdate(userId, {
+    const updatedUser = await User.findByIdAndUpdate(req.user.userId, {
       voiceRecorded: true,
       isFirstLogin: false
     }, { new: true });
     console.log('User updated:', updatedUser._id, 'voiceRecorded:', updatedUser.voiceRecorded);
     
-    res.json({ message: 'Voice recordings uploaded successfully' });
+    res.json({ message: 'Voice recordings processed successfully' });
   } catch (error) {
     console.error('Error handling voice recordings:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Voice Verification Route
+app.post('/api/user/verify-voice', authenticateToken, upload.single('recording'), async (req, res) => {
+  try {
+    console.log('Voice verification request received');
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'No voice recording provided' });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Run voice verification
+    const { spawn } = require('child_process');
+    const pythonProcess = spawn('python', [
+      path.join(__dirname, '..', 'Backend_trackApp', 'train_model.py'),
+      user.name,
+      req.file.path // Pass the verification file path
+    ]);
+
+    let verificationResult = '';
+    let verificationError = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      verificationResult += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      verificationError += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code !== 0) {
+        console.error('Voice verification failed:', verificationError);
+        return res.status(500).json({ message: 'Voice verification failed' });
+      }
+
+      // Parse verification result
+      const resultLines = verificationResult.split('\n');
+      const verified = resultLines.some(line => line.includes('Verification result: Verified'));
+      const similarityLine = resultLines.find(line => line.includes('Similarity score:'));
+      const similarity = similarityLine ? parseFloat(similarityLine.split(':')[1]) : 0;
+
+      res.json({
+        verified,
+        similarity,
+        message: verified ? 'Voice verified successfully' : 'Voice verification failed'
+      });
+    });
+  } catch (error) {
+    console.error('Error during voice verification:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

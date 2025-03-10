@@ -65,13 +65,36 @@ export const getProfile = async (token: string): Promise<User> => {
   return response.data;
 };
 
-export const uploadVoiceRecordings = async (formData: FormData, token: string): Promise<void> => {
-  await axios.post(`${API_URL}/user/voice-recordings`, formData, {
-    headers: { 
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'multipart/form-data'
+interface VoiceRecordingData {
+  recordings: string[];
+  userId: string;
+  username: string;
+}
+
+export const uploadVoiceRecordings = async (data: VoiceRecordingData, token: string): Promise<void> => {
+  console.log('Starting voice recordings upload...');
+  console.log('Number of recordings:', data.recordings.length);
+
+  try {
+    const response = await axios.post(`${API_URL}/user/voice-recordings`, data, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000, // 30 seconds
+    });
+    
+    console.log('Voice recordings upload successful:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Voice recordings upload failed:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      console.error('Response headers:', error.response?.headers);
     }
-  });
+    throw error;
+  }
 };
 
 export const skipVoiceRecording = async (token: string): Promise<void> => {
