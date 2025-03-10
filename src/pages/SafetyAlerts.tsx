@@ -34,25 +34,6 @@ const SafetyAlerts = () => {
               </div>
             </div>
 
-            {/* Warning Alert
-            <div className="border-l-4 border-yellow-500 bg-yellow-50 rounded-r-lg p-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-6 h-6 text-yellow-600" />
-                <div>
-                  <h3 className="font-medium text-yellow-900">Warning</h3>
-                  <p className="text-yellow-700">Battery level low on safety device</p>
-                  <div className="mt-2">
-                    <button className="text-yellow-600 hover:text-yellow-700 font-medium mr-4">
-                      Dismiss
-                    </button>
-                    <button className="text-yellow-600 hover:text-yellow-700 font-medium">
-                      Check Device
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div> */}
-
             {/* Info Alert */}
             <div className="border-l-4 border-blue-500 bg-blue-50 rounded-r-lg p-4">
               <div className="flex items-center gap-3">

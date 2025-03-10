@@ -30,12 +30,12 @@ const Navbar: React.FC<NavbarProps> = ({ isScrolled }) => {
               ["Live Map", "/live-map"],
               ["Tracking History", "/tracking-history"],
               ["Safety Alerts", "/safety-alerts"],
-              ["Device Pairing", "/device-pairing"],
+              ["Device Pairing", "/device-pairing"], // ✅ Fixed syntax
               ["Help", "/help"],
               ["Privacy", "/privacy"],
             ].map(([title, url]) => (
               <NavLink
-                key={url} 
+                key={url}
                 to={url}
                 className={({ isActive }) =>
                   `px-4 py-2 rounded-md text-sm font-medium transition-colors ${
